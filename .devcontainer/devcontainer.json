@@ -2,6 +2,9 @@
     "name": "latex-env",
     "customizations": {
         "vscode": {
+            "settings": {
+				"extensions.verifySignature": false
+			},
             "extensions": [
                 "James-Yu.latex-workshop"
             ]

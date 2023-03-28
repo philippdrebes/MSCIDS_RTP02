@@ -1,0 +1,142 @@
+---
+title: "Exercise 5"
+author: "Philipp Drebes"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  pdf_document:
+    keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercise 5.1
+
+Simulations are key to validate models. Thus, we would like to use this exercise to simulate several time series by means of an ARMA model.
+
+The innovation $E_t$ shall follow a standard normal distribution $\mathcal{N}(0; 1)$ in every model.
+
+a.  **AR(2) model with coefficients** $\alpha_1 = 0.9$ **and** $\alpha_2 = −0.5$**.**
+
+First think of how the autocorrelations should behave theoretically.
+
+*The partial autocorrelation should have no significant values after lag 2.*
+
+Use the procedure ARMAacf() to compute the theoretical autocorrelations of the models and plot them.
+
+```{r}
+plot(0:30, ARMAacf(ar = c(0.9, -0.5), lag.max = 30),type = "h", ylab = "ACF")
+plot(1:30, ARMAacf(ar = c(0.9, -0.5), lag.max = 30, pacf = TRUE), type = "h", ylab = "PACF")
+```
+
+Now simulate a realization of length n = 200 for the models. Repeat each simulation several times to develop some intuition on what occurs by chance and what is structure.
+
+```{r}
+set.seed(989898)
+par(mfrow=c(3,3))
+
+r.sim1 <- arima.sim(n = 200, model = list(ar = c(0.9, -0.5)))
+plot(r.sim1)
+
+replicate(8, plot(arima.sim(n = 200, model = list(ar = c(0.9, -0.5))), ylab = 'sim'))
+```
+
+Inspect the time series plot and the correlograms with the ordinary and partial autocorrelations.
+
+```{r}
+acf(r.sim1)
+pacf(r.sim1)
+```
+
+*The autocorrelation function hints at a seasonality. As expected the PACF has no more significant values after lag 2.*
+
+b.  **MA(3) model with coefficients** $\beta_1 = 0.8$**,** $\beta_2 = −0.5$ **and** $\beta_3 = −0.4$**.**
+
+First think of how the autocorrelations should behave theoretically.
+
+*In the ACF, there should be 3 statistically significant "spikes" at lags 1, 2 and 3 followed by non-significant values for other lags.*
+
+Use the procedure ARMAacf() to compute the theoretical autocorrelations of the models and plot them.
+
+```{r}
+plot(0:30, ARMAacf(ma = c(0.8, -0.5, -0.4), lag.max = 30),type = "h", ylab = "ACF")
+plot(1:30, ARMAacf(ma = c(0.8, -0.5, -0.4), lag.max = 30, pacf = TRUE), type = "h", ylab = "PACF")
+```
+
+Now simulate a realisation of length n = 200 for the models. Repeat each simulation several times to develop some intuition on what occurs by chance and what is structure.
+
+```{r}
+set.seed(989898)
+par(mfrow=c(3,3))
+
+r.sim2 <- arima.sim(n = 200, model = list(ma = c(0.8, -0.5, -0.4)))
+plot(r.sim2)
+
+replicate(8, plot(arima.sim(n = 200, model = list(ma = c(0.8, -0.5, -0.4))), ylab = 'sim'))
+```
+
+Inspect the time series plot and the correlograms with the ordinary and partial autocorrelations.
+
+```{r}
+acf(r.sim2)
+pacf(r.sim2)
+```
+
+*The autocorrelation function of the simulated data is very similar to the theoretical. The partial autocorrelation function shows a similar pattern as the theoretical, however with not as many significant spikes.*
+
+## Exercise 5.2
+
+In this exercise we consider some examples of AR(p) models and check their stationarity.
+
+a.  **Test the models with the innovation** $E_t$ **on stationarity with the help of the R function polyroot.**
+
+```{=html}
+<!-- -->
+```
+i)  $X_t = 0.5 X_{t−1} + 2 X_{t−2} + E_t$
+
+    ```{r}
+    polyroot(c(1, -0.5, -2))
+    ```
+
+    *As the first value has an absolute value below 1, the time series is not stationary.*
+
+ii) $Y_t = Y_{t−1} + E_t$
+
+    ```{r}
+    polyroot(c(1, -1))
+    ```
+
+    *As the first value has an absolute value of 1, the time series is stationary.*
+
+```{=html}
+<!-- -->
+```
+b.  **For which value of the coefficient** $\alpha_2$ **of** $X_{t−2}$ **is the model** $X_t = 0.5 \cdot X_{t−1} + \alpha_2 \cdot X_{t−2} + E_t$ **stationary?**
+
+    ```{r}
+    for (i in seq(from = -10, to = 10, by = 0.01)) {
+      root <- Re(polyroot(c(1, -0.5, i))[1])
+      if (root >= 1) {
+        print(i)
+        break
+      }
+    }
+    ```
+
+    Check:
+
+    ```{r}
+    polyroot(c(1, -0.5, -0.5))
+    ```
+
+    *For* $\alpha_2 = 0.5$*, the time series is stationary.*
+
+c.  **Why is the model** $Y_t = \alpha \cdot Y_{t−1} + E_t$ **not stationary for** $|\alpha| \geq 1$**? Calculate the characteristic function and determine its roots to confirm this observation.**
+
+```{r}
+for (i in seq(from = -0.5, to = -1.5, by = -0.1)) {
+  print(polyroot(c(1, i)))
+}
+```
