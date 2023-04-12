@@ -91,9 +91,8 @@ In this exercise we consider some examples of AR(p) models and check their stati
 
 a.  **Test the models with the innovation** $E_t$ **on stationarity with the help of the R function polyroot.**
 
-```{=html}
 <!-- -->
-```
+
 i)  $X_t = 0.5 X_{t−1} + 2 X_{t−2} + E_t$
 
     ```{r}
@@ -110,9 +109,8 @@ ii) $Y_t = Y_{t−1} + E_t$
 
     *As the first value has an absolute value of 1, the time series is stationary.*
 
-```{=html}
 <!-- -->
-```
+
 b.  **For which value of the coefficient** $\alpha_2$ **of** $X_{t−2}$ **is the model** $X_t = 0.5 \cdot X_{t−1} + \alpha_2 \cdot X_{t−2} + E_t$ **stationary?**
 
     ```{r}
