@@ -133,7 +133,7 @@ t.url <- "http://stat.ethz.ch/Teaching/Datasets/WBL/varve.dat"
 d.varve <- ts(scan(t.url)[201:550], frequency=1)
 ```
 
-a) It is advisable to log-transform the time series. Why?
+a)  It is advisable to log-transform the time series. Why?
 
 ```{r}
 boxplot(d.varve)
@@ -142,7 +142,7 @@ tsdisplay(d.varve)
 
 \textcolor{blue}{The data appears to be right skewed which can be a reason to log-transform the data.}
 
-b) Is the log-transformed time series stationary? If not, how can you make this time series stationary?
+b)  Is the log-transformed time series stationary? If not, how can you make this time series stationary?
 
 ```{r}
 d.varve.log <- log(d.varve)
