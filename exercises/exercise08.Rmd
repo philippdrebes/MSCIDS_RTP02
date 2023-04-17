@@ -3,8 +3,10 @@ title: "Exercise 8"
 author: "Philipp Drebes"
 date: "`r format(Sys.Date(), '%d.%m.%Y')`"
 output:
-  pdf_document:
+  pdf_document: 
     keep_tex: yes
+    highlight: pygments
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -15,17 +17,41 @@ knitr::opts_chunk$set(echo = TRUE)
 
 As in exercise 7.1, we would like to use this exercise to simulate several time series by means of an ARMA model. Please perform the same steps as in exercise 5.1 for the following models. The innovation $E_t$ shall follow a standard normal distribution $\mathcal{N}(0; 1)$ in every model.
 
-a) Why is it not possible to simulate the ARIMA(2,1,2) model with coefficients $\alpha_1 = 0.5, \alpha_2 = 0.5, \beta_1 = -0.4$ and $\beta_2 = 0.3$ with $d = 1$ with arima.sim?
+a)  Why is it not possible to simulate the ARIMA(2,1,2) model with coefficients $\alpha_1 = 0.5, \alpha_2 = 0.5, \beta_1 = -0.4$ and $\beta_2 = 0.3$ with $d = 1$ with arima.sim?
 
 ```{r}
+set.seed(989898)
 
+# plot(arima.sim(n = 200, model = list(ar = c(0.5, 0.5), ma = c(-0.4, 0.3), d = 1)))
+
+# Error in `arima.sim(n = 200, model = list(ar = c(0.5, 0.5), ma = c(-0.4, 0.3), d = 1))`:
+# 'ar' part of model is not stationary
 ```
 
-b) What is the equivalent ARMA model to the ARIMA(2,1,2) model in task c)?
+\textcolor{blue}{It's not possible to simulate the model with arima.sim, because the auto regressive part of the model is not stationary. $X_1, X_0$ and $X_{-1}$ are not defined, so R assumes $X_0$ and $X_{-1}$ to be $0$. R uses a 'burn-in' period and discards this data before continuing the simulation [@stats]. If I understood this post on Stackexchange [@haugAnswerArPart2022] correct, this will only work if the conditional distribution implies stationarity, because then the process will converge from the stationarity distribution in long run.}
+
+b)  What is the equivalent ARMA model to the ARIMA(2,1,2) model in task c)?
+
+\textcolor{blue}{It will be an ARMA(3,2) model.}
+
+$$
+(1 - 0.5 B - 0.5 B^2) (1 - B) X_t = (1 - 0.4 B + 0.3 B^2) E_t \\
+(1 - 1.5B + 0.5B^3) X_t = E_t - 0.4 E_{-1} + 0.3 E_{-2} \\
+X_t = 1.5 X_{-1} + 0 X_{-2} - 0.5 X_{-3} + E - 0.4 E_{-1} + 0.3 E_{-2}
+$$
+
+ARMA(3,2) with $$\alpha_1 = 1.5, \quad \alpha_2 = 0, \quad \alpha_3 = -0.5, \quad \beta_1 = -0.4, \quad \beta_2 = 0.3$$
+
+Polyroots of the ARIMA(2,1,2) model
 
 ```{r}
-# Hint: Determine the equivalent ARMA process.
+abs(polyroot(c(1, -0.5, -0.5)))
+```
 
+Polyroots of the ARMA(3,2) model
+
+```{r}
+abs(polyroot(c(1, -1.5, 0, 0.5)))
 ```
 
 # Exercise 8.2
@@ -33,42 +59,51 @@ b) What is the equivalent ARMA model to the ARIMA(2,1,2) model in task c)?
 There is a study on the development of beluga whales that focusses on the nursing behaviour of mother and calf. During a total of 160 time periods (each lasting 6 hours) subsequent to birth, the following variables were observed for Hudson, a beluga calf. Zoologists use this data to ascertain the health of this young whale. A short description of the data is given in the following table.
 
 |          |                                                                                    |
-|------------|------------------------------------------------------------|
+|------------------|------------------------------------------------------|
 | PERIOD   | Index of time period                                                               |
 | BOUTS    | Square root of the number of nursing bouts                                         |
 | LOCKONS  | Square root of the number of lock-ons (docking attempts)                           |
-| DAYNIGHT |  Day (1, 8am - 8pm) or night (0, 8pm - 8am) indicator                              |
+| DAYNIGHT | Day (1, 8am - 8pm) or night (0, 8pm - 8am) indicator                               |
 | NURSING  | Square root of the number of seconds spent successfully nursing during the period. |
 
-A nursing bout is defined as a successful nursing episode where milk was obtained. We would like to model the nursing time by means of the other variables. Count variables have already undergone a square root transformation to stabilize their variance (first-aid-transformation). You will find the data in the file beluga.dat. Load the data in the usual way and create a time series matrix:
+A nursing bout is defined as a successful nursing episode where milk was obtained. We would like to model the nursing time by means of the other variables. Count variables have already undergone a square root transformation to stabilize their variance (first-aid-transformation). You will find the data in the file *beluga.dat*. Load the data in the usual way and create a time series matrix:
 
 ```{r}
 d.beluga <- read.table("http://stat.ethz.ch/Teaching/Datasets/WBL/beluga.dat", header = TRUE)
 d.beluga <- ts(d.beluga)
+plot(d.beluga)
 ```
 
-a) Fit the model $$
-\text{NURSING} = \beta_0 + \beta_1 \text{PERIOD} + \beta_2 \text{BOUTS} + \beta_3 \text{LOCKONS} + \beta_4 \text{DAYNIGHT} 
-$$
+a)  Fit the model $$
+    \text{NURSING} = \beta_0 + \beta_1 \text{PERIOD} + \beta_2 \text{BOUTS} + \beta_3 \text{LOCKONS} + \beta_4 \text{DAYNIGHT} 
+    $$
 
 using ordinary linear regression. Check the independence of the residuals. What conclusions can zoologists draw from this analysis?
 
 ```{r}
-
+fit <- lm(NURSING ~ PERIOD + BOUTS + LOCKONS + DAYNIGHT, data = d.beluga)
+summary(fit)
 ```
 
-b) Due to the correlations involved, an AR(p) model should be assumed for the residuals. Determine the order p of this model, and estimate the parameters $\alpha_1, \dots, \alpha_p$
+\textcolor{blue}{}
+
+b)  Due to the correlations involved, an AR(p) model should be assumed for the residuals. Determine the order p of this model, and estimate the parameters $\alpha_1, \dots, \alpha_p$
 
 ```{r}
-# r.burg <- ar(...)
+r.burg <- ar(fit$residuals)
+r.burg
 ```
 
-c) Estimate the regression coefficients and the AR parameters using Generalized Least Squares with Maximum Likelihood estimation.
+\textcolor{blue}{The order p is 2 with $\alpha_1 = 0.2837$ and $\alpha_2 = 0.3201$}
+
+c)  Estimate the regression coefficients and the AR parameters using Generalized Least Squares with Maximum Likelihood estimation.
 
 ```{r}
-library(nlme) # Load the package containing the procedure gls()
-r.bel.gls <- gls(NURSING ~ BOUTS + LOCKONS + DAYNIGHT + PERIOD, data = d.beluga, 
-                 correlation = corARMA(form = ~PERIOD, p = r.burg$order, q = 0, fixed = FALSE), 
+library(nlme, quietly = T)
+
+r.bel.gls <- gls(NURSING ~ BOUTS + LOCKONS + DAYNIGHT + PERIOD, data = d.beluga,
+                 correlation = 
+                   corARMA(form = ~PERIOD, p = r.burg$order, q = 0, fixed = FALSE), 
                  method = "ML")
 summary(r.bel.gls)
 d.resid <- ts(resid(r.bel.gls))
@@ -76,22 +111,27 @@ d.resid <- ts(resid(r.bel.gls))
 
 To ensure convergence of the algorithm, known estimates of the AR parameters can be passed to corARMA() as starting values using the optional argument values. In this particular case, this does not change the outcome.(correlation = corARMA(..., value = r.burg\$ar, ...))
 
-d) Optional: Simplify the model if possible.
+d)  Optional: Simplify the model if possible.
 
-e) Optional: What transformation should you apply to obtain a linear model with independent errors? State it as a formula.\
-Hint: Cochrane-Orcutt Method.
+e)  Optional: What transformation should you apply to obtain a linear model with independent errors? State it as a formula.\
+    Hint: Cochrane-Orcutt Method.
 
-f) Optional: How would you perform this transformation (or these transformations) in R? Use the transformed time series to carry out another regression, and look at the correlation structure for the errors!\
-R-Hint: lag().
+f)  Optional: How would you perform this transformation (or these transformations) in R? Use the transformed time series to carry out another regression, and look at the correlation structure for the errors!\
+    R-Hint: lag().
 
 # Exercise 8.3
 
 With the new material in the course we would like to return to Exercise 7.3.
 
-a) Choose a suitable model that fits the data. Does your model fit? Analyze the residuals and comment on your decision.
+a)  Choose a suitable model that fits the data. Does your model fit? Analyze the residuals and comment on your decision.
+
+```{r, results='hide', message=FALSE}
+t.url <- "http://stat.ethz.ch/Teaching/Datasets/WBL/varve.dat"
+d.varve <- ts(scan(t.url)[201:550], frequency=1)
+```
 
 ```{r}
 # r.varve <- arima(log(d.varve), order = c(..., ..., ...))
 ```
 
-b) Write down the model you chose in a) with its estimated coefficients.
+b)  Write down the model you chose in a) with its estimated coefficients.
