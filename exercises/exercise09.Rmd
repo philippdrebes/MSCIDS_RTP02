@@ -1,0 +1,86 @@
+---
+title: "Exercise 9"
+author: "Philipp Drebes"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  pdf_document: 
+    keep_tex: yes
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 9.1
+
+In this exercise, we look at the time series `prodn`, which is available in the package `astsa`. It contains monthly data about the Federal Reserve Board Production Index from 1948-1978, in total the time series contains data for n = 372 months.
+
+a)  Plot the time series. What kind of non-stationarity is evident?
+
+```{r, message=FALSE}
+library(astsa, quietly = T)
+library(forecast, quietly = T)
+
+tsplot(prodn)
+tsdisplay(prodn)
+```
+
+\textcolor{blue}{The ACF shows a slow decay, which implies that there is a trend. If there was also seasonality, the ACF would show an oscillatory behavior, which it does not.}
+
+```{r}
+tsdisplay(diff(log(prodn)))
+
+tsdisplay(diff(log(prodn), 12)) # remove seasonality
+tsdisplay(diff(diff(log(prodn), 12))) # remove trend
+
+monthplot(prodn)
+plot(stl(prodn, s.window = 'periodic'))
+```
+
+b)  How can the time series be made stationary?
+
+\textcolor{blue}{By applying a $\text{SARIMA}(1,1,0)(1,1,0)^{12}$ model.}
+
+c)  Based on your considerations in b), what kind of model would you fit to the original time series `prodn`? Try different fits and choose your favorite.
+
+```{r}
+fit.110 <- arima(prodn, order = c(1, 1, 0), seasonal = c(1, 1, 0))
+fit.110
+sarima(prodn, 1, 1, 0, 1, 1, 0, 12, gg = TRUE, col = 4)
+```
+
+```{r}
+set.seed(3)
+par(mfrow = c(3, 3))
+summary(fit.110)
+replicate(9, 
+      plot(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , ylab = 'sim'))
+
+tsdisplay(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , ylab = 'sim')
+```
+
+\textcolor{blue}{In most of the simulations, the ACF is clearly different to the original.}
+
+```{r}
+fit.212 <- sarima(prodn, 2, 1, 2, 2, 1, 2, 12, gg = TRUE, col = 4)
+```
+
+```{r}
+set.seed(2)
+par(mfrow = c(3, 3))
+fit.212
+replicate(9, 
+      plot(sarima.sim(ar = c(-0.3, 0.3),
+                      ma = c(0.6, 0),
+                      sar = c(0.4, -0.3),
+                      sma = c(-1.1, 0.5),
+                      S = 12, d = 1, n = 370) , ylab = 'sim'))
+
+
+tsdisplay(sarima.sim(ar = c(-0.3, 0.3),
+                      ma = c(0.6, 0),
+                      sar = c(0.4, -0.3),
+                      sma = c(-1.1, 0.5),
+                      S = 12, d = 1, n = 370) , ylab = 'sim')
+```
