@@ -54,8 +54,7 @@ sarima(prodn, 1, 1, 0, 1, 1, 0, 12, gg = TRUE, col = 4)
 set.seed(3)
 par(mfrow = c(3, 3))
 summary(fit.110)
-replicate(9, 
-      plot(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , ylab = 'sim'))
+replicate(9, plot(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , ylab = 'sim'))
 
 tsdisplay(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , ylab = 'sim')
 ```
@@ -70,17 +69,16 @@ fit.212 <- sarima(prodn, 2, 1, 2, 2, 1, 2, 12, gg = TRUE, col = 4)
 set.seed(2)
 par(mfrow = c(3, 3))
 fit.212
-replicate(9, 
-      plot(sarima.sim(ar = c(-0.3, 0.3),
-                      ma = c(0.6, 0),
-                      sar = c(0.4, -0.3),
-                      sma = c(-1.1, 0.5),
-                      S = 12, d = 1, n = 370) , ylab = 'sim'))
+replicate(9, plot(sarima.sim(ar = c(-0.3, 0.3),
+                             ma = c(0.6, 0),
+                             sar = c(0.4, -0.3),
+                             sma = c(-1.1, 0.5),
+                             S = 12, d = 1, n = 370) , ylab = 'sim'))
 
 
 tsdisplay(sarima.sim(ar = c(-0.3, 0.3),
-                      ma = c(0.6, 0),
-                      sar = c(0.4, -0.3),
-                      sma = c(-1.1, 0.5),
-                      S = 12, d = 1, n = 370) , ylab = 'sim')
+                     ma = c(0.6, 0),
+                     sar = c(0.4, -0.3),
+                     sma = c(-1.1, 0.5),
+                     S = 12, d = 1, n = 370) , ylab = 'sim')
 ```
