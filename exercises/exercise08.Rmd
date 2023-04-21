@@ -28,7 +28,7 @@ set.seed(989898)
 # 'ar' part of model is not stationary
 ```
 
-\textcolor{blue}{It's not possible to simulate the model with arima.sim, because the auto regressive part of the model is not stationary. $X_1, X_0$ and $X_{-1}$ are not defined, so R assumes $X_0$ and $X_{-1}$ to be $0$. R uses a 'burn-in' period and discards this data before continuing the simulation [@stats]. If I understood this post on Stackexchange [@haugAnswerArPart2022] correct, this will only work if the conditional distribution implies stationarity, because then the process will converge from the stationarity distribution in long run.}
+\textcolor{blue}{It's not possible to simulate the model with arima.sim, because the auto regressive part of the model is not stationary. $X_1, X_0$ and $X_{-1}$ are not defined, so R assumes $X_0$ and $X_{-1}$ to be $0$. R uses a 'burn-in' period and discards this data before continuing the simulation \cite{ArimaSimFunction}. If I understood this post on Stackexchange \\cite{haugAnswerArPart2022} correct, this will only work if the conditional distribution implies stationarity, because then the process will converge from the stationarity distribution in long run.}
 
 b)  What is the equivalent ARMA model to the ARIMA(2,1,2) model in task c)?
 
@@ -59,7 +59,7 @@ abs(polyroot(c(1, -1.5, 0, 0.5)))
 There is a study on the development of beluga whales that focusses on the nursing behaviour of mother and calf. During a total of 160 time periods (each lasting 6 hours) subsequent to birth, the following variables were observed for Hudson, a beluga calf. Zoologists use this data to ascertain the health of this young whale. A short description of the data is given in the following table.
 
 |          |                                                                                    |
-|------------------|------------------------------------------------------|
+|---------------------|---------------------------------------------------|
 | PERIOD   | Index of time period                                                               |
 | BOUTS    | Square root of the number of nursing bouts                                         |
 | LOCKONS  | Square root of the number of lock-ons (docking attempts)                           |
@@ -96,20 +96,20 @@ r.burg
 
 \textcolor{blue}{The order p is 2 with $\alpha_1 = 0.2837$ and $\alpha_2 = 0.3201$}
 
-c)  Estimate the regression coefficients and the AR parameters using Generalized Least Squares with Maximum Likelihood estimation.
+c)  Estimate the regression coefficients and the AR parameters using Generalized Least Squares with Maximum Likelihood estimation.\
+    To ensure convergence of the algorithm, known estimates of the AR parameters can be passed to corARMA() as starting values using the optional argument values. In this particular case, this does not change the outcome.(correlation = corARMA(..., value = r.burg\$ar, ...))
 
 ```{r}
 library(nlme, quietly = T)
+library(forecast)
 
 r.bel.gls <- gls(NURSING ~ BOUTS + LOCKONS + DAYNIGHT + PERIOD, data = d.beluga,
                  correlation = 
-                   corARMA(form = ~PERIOD, p = r.burg$order, q = 0, fixed = FALSE), 
+                   corARMA(form = ~PERIOD, p = r.burg$order, value = r.burg$ar, q = 0, fixed = FALSE), 
                  method = "ML")
 summary(r.bel.gls)
 d.resid <- ts(resid(r.bel.gls))
 ```
-
-To ensure convergence of the algorithm, known estimates of the AR parameters can be passed to corARMA() as starting values using the optional argument values. In this particular case, this does not change the outcome.(correlation = corARMA(..., value = r.burg\$ar, ...))
 
 d)  Optional: Simplify the model if possible.
 
@@ -126,12 +126,80 @@ With the new material in the course we would like to return to Exercise 7.3.
 a)  Choose a suitable model that fits the data. Does your model fit? Analyze the residuals and comment on your decision.
 
 ```{r, results='hide', message=FALSE}
+library(forecast)
+
 t.url <- "http://stat.ethz.ch/Teaching/Datasets/WBL/varve.dat"
 d.varve <- ts(scan(t.url)[201:550], frequency=1)
+tsdisplay(d.varve)
+hist(d.varve)
+```
+
+Differencing
+
+```{r}
+tsdisplay(diff(log(d.varve)))
+```
+
+```{=tex}
+\textcolor{blue}{Observations: 
+Cut-off of ACF at lag 1, Cut-off of PACF at lag 5 $\rightarrow$ Potentially suitable for ARMA(5,1) model
+$\rightarrow$ Suitable for fitting ARIMA(4,1,1) p=4, d=1, q=1}
+```
+```{r}
+fit <- arima(log(d.varve), order = c(4, 1, 1))
+fit
+tsdisplay(fit$residuals)
 ```
 
 ```{r}
-# r.varve <- arima(log(d.varve), order = c(..., ..., ...))
+plot(log(d.varve)) 
+lines(log(d.varve) - fit$resid, col="red")
+
+legend(x = 'topleft', legend = c('Original', 'ARIMA(4,1,1)'),
+       col = c('black', 'red'), lwd = 1, bg = 'white')
+```
+
+```{r}
+qqnorm(fit$resid, main='Q-Q Plot: ARIMA')
+qqline(fit$resid)
 ```
 
 b)  Write down the model you chose in a) with its estimated coefficients.
+
+```{r}
+fit
+```
+
+$$
+\alpha_1 = 0.22, \quad \alpha_2 = 0.04, \quad \alpha_3 = -0.07, \quad \alpha_4 = -0.06, \\
+\beta_1 = -0.9
+$$
+
+Generate time series with model and compare them to the original.
+
+```{r, results='hide'}
+plot(log(d.varve))
+```
+
+```{r, fig.height=9, results='hide'}
+set.seed(12)
+par(mfrow=c(3,3))
+
+replicate(9, plot(arima.sim(n = 350, model = fit$model), ylab = 'sim'))
+```
+
+\textcolor{blue}{The simulated time series look similar to the original data. However the range is not the same. The original lies between 2 and 5, whereas the simulated series have values between -3 and 3. Also, the slight curve in the original data is not represented in any of the simulations. I would assume this was due to an unusual effect, which is not happening in the simulations.}
+
+\textcolor{blue}{Just to make sure, let's use auto.arima (not implying that this gives us a perfect result).}
+
+```{r, fig.height=9}
+set.seed(12)
+par(mfrow=c(3,3))
+
+fit.auto <- auto.arima(log(d.varve), max.p=10, max.q=10, seasonal=FALSE, ic="aic")
+fit.auto
+
+replicate(9, plot(arima.sim(n = 350, model = fit.auto$model) , ylab = 'sim'))
+```
+
+\textcolor{blue}{Simulations are similar to our ARIMA(4,1,1) model. So we might be on the right track.}
