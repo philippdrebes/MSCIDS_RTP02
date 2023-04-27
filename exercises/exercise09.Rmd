@@ -26,7 +26,7 @@ tsplot(prodn)
 tsdisplay(prodn)
 ```
 
-\textcolor{blue}{The ACF shows a slow decay, which implies that there is a trend. If there was also seasonality, the ACF would show an oscillatory behavior, which it does not.}
+\textcolor{blue}{The ACF shows a slow decay, which implies that there is a trend. If there was also seasonality, the ACF would show an oscillatory behavior, which it does only very slightly.}
 
 ```{r}
 tsdisplay(diff(log(prodn)))
@@ -40,15 +40,19 @@ plot(stl(prodn, s.window = 'periodic'))
 
 b)  How can the time series be made stationary?
 
-\textcolor{blue}{By applying a $\text{SARIMA}(1,1,0)(1,1,0)^{12}$ model.}
+\textcolor{blue}{By applying a SARIMA model.}
 
 c)  Based on your considerations in b), what kind of model would you fit to the original time series `prodn`? Try different fits and choose your favorite.
+
+\textcolor{blue}{A $\text{SARIMA}(1,1,0)(1,1,0)^{12}$ could be a good fit, because in the PACF of the original time series, there is a sudden drop after lag 1. We also see a trend, therefore $d = 1$ is chosen. }
 
 ```{r}
 fit.110 <- arima(prodn, order = c(1, 1, 0), seasonal = c(1, 1, 0))
 fit.110
 sarima(prodn, 1, 1, 0, 1, 1, 0, 12, gg = TRUE, col = 4)
 ```
+
+\textcolor{blue}{The Q-Q plot does not look as good, as there are some points at both end diverging from the line. We also still have some significant values in the ACF.}
 
 ```{r}
 set.seed(3)
@@ -59,18 +63,24 @@ replicate(9, plot(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , y
 tsdisplay(sarima.sim(ar = 0.35, sar = -0.41, S = 12, d = 1, n = 370) , ylab = 'sim')
 ```
 
-\textcolor{blue}{In most of the simulations, the ACF is clearly different to the original.}
+\textcolor{blue}{In most of the simulations, the ACF is clearly different to the original. The $\text{SARIMA}(1,1,0)(1,1,0)^{12}$ is so far not very promising.}
+
+\textcolor{blue}{A $\text{SARIMA}(2,1,2)(2,1,2)^{12}$ could also be possible, because when we remove trend and seasonality from the original time series, we see drops in the ACF at lag 2 and in the PACF at lag 2.}
 
 ```{r}
 fit.212 <- sarima(prodn, 2, 1, 2, 2, 1, 2, 12, gg = TRUE, col = 4)
 ```
 
+\textcolor{blue}{The Q-Q plot seems to a bit better than with the prior model. Also, there are no more significant values in the ACF of the residuals.}
+
 ```{r}
 set.seed(2)
 par(mfrow = c(3, 3))
 fit.212
+
+# the model is used for the simulations
 replicate(9, plot(sarima.sim(ar = c(-0.3, 0.3),
-                             ma = c(0.6, 0),
+                             ma = c(0.6, -0.1),
                              sar = c(0.4, -0.3),
                              sma = c(-1.1, 0.5),
                              S = 12, d = 1, n = 370) , ylab = 'sim'))
@@ -82,3 +92,7 @@ tsdisplay(sarima.sim(ar = c(-0.3, 0.3),
                      sma = c(-1.1, 0.5),
                      S = 12, d = 1, n = 370) , ylab = 'sim')
 ```
+
+\textcolor{blue}{The $\text{SARIMA}(2,1,2)(2,1,2)^{12}$ appears to be a good fit for the time series, as the residuals only contain white noise behavior. Additionally, the ACF and PACF of the simulated data resemble those of the original.}
+
+\textcolor{blue}{Some further models, such as $\text{SARIMA}(3,1,2)(3,1,2)^{12}$ and $\text{SARIMA}(4,1,2)(4,1,2)^{12}$ were tested, as the ACF and PACF of the transformed original data hint at further significant values at those lags. However, creating those models produced NaN values or other errors, which made them not usable.}
