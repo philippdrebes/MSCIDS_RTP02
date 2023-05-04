@@ -60,25 +60,105 @@ mean((actual - pred$pred)^2)
 
 ## Exercise 10.2
 
-We want to compare methods for forecasting the airplane data: the forecasting using a SARIMA model and the forecasting using an STL-decomposition. For being able to compare the prediction methods with the real data, first read in the airplaine data and use only the observations from 1949 to 1956.
+We want to compare methods for forecasting the airplane data: the forecasting using a SARIMA model and the forecasting using an STL-decomposition. For being able to compare the prediction methods with the real data, first read in the `airplaine` data and use only the observations from 1949 to 1956.
 
 ```{r}
 d.air <- AirPassengers
 d.airshort <- window(d.air, end = c(1956, 12))
 ```
 
-a)  Fit an ARIMA/SARIMA Model for the shorter dataset d.airshort. Use transformations if suitable. Compute a prediction for the years 1957-1960 and plot it along with the prediction interval and the actual observations for this period.
+a)  Fit an ARIMA/SARIMA Model for the shorter dataset `d.airshort`. Use transformations if suitable. Compute a prediction for the years 1957-1960 and plot it along with the prediction interval and the actual observations for this period.
 
 ```{r}
-# predict(..., n.ahead = ...)
+tsdisplay(d.airshort)
+
+# try to get rid of the seasonal effect
+# monthly data -> differencing at lag 12
+d.airshort.12 <- diff(d.airshort, lag = 12)
+tsdisplay(d.airshort.12)
+
+# there seems to be a trend left
+d.airshort.12.1 <- diff(d.airshort.12, lag = 1)
+tsdisplay(d.airshort.12.1)
+```
+
+\textcolor{blue}{We use a $\text{SARIMA}(p, d, q)(P, D, Q)^s$-model, where $s = 12$, $D = 1$ and $d = 1$.}
+
+\textcolor{blue}{P and Q can be determined by looking at the lags which are multiples of 12. Here we choose the following possibilities: $(P, Q) = (0, 1)$ (cutoff in ACF at lag 1, PACF no significant values).}
+
+\textcolor{blue}{For deciding on the orders p and q, we consider the properties of the ACF and PACF for small lags. Here we use $(p, q)=(1, 1)$.}
+
+```{r}
+fit <- arima(d.airshort, order = c(1, 1, 1), seasonal = c(0, 1, 1))
+fit
+
+fit.auto <- auto.arima(d.airshort, ic = "aic")
+fit.auto
+```
+
+\textcolor{blue}{auto.arima() has produced a model with a slightly better AIC. Going forward we will use the model found with the use of auto.arima().}
+
+```{r}
+air.pred <- predict(fit.auto, n.ahead = 4 * 12)
+
+plot(window(d.air, start = c(1955, 1), end = c(1960, 12)))
+lines(air.pred$pred, col = "green")
+lines(air.pred$pred + 1.96 * air.pred$se, col = 'gray', lty = 2)
+lines(air.pred$pred - 1.96 * air.pred$se, col = 'gray', lty = 2)
+legend(x = 'bottomleft', 
+       legend = c('original', 'prediction', 'CI'),
+       col = c('black', 'green', 'gray'), 
+       lty = c(1, 1, 2) , lwd = 2, bg = 'white')
 ```
 
 b)  Now do prediction for the years 1957-1960 as seen in the lecture with linear extraploation of the trend estimate, continuation of the seasonal effect and and ARMA(p,q) forecast for the stationary remainder. Plot the predicted timeseries (this time without prediction interval, why?) and compare them to the actual observations.
 
 ```{r}
-## example trend extraction
-fit <- stl(data, s.window = "periodic")
-trend <- fit$time.series[, 2]
+decomp <- stl(d.airshort, s.window = "periodic")
+plot(decomp)
+
+# Trend forecast by linear extrapolation
+trend <- decomp$time.series[, 2]
+xx <- time(trend)
+yy <- trend
+fit.regr <- lm(yy~xx)
+summary(fit.regr)
+t.fore <- sort(trend, decreasing = TRUE)[1] + ((1:48)/12) * coef(fit.regr)[2]
+
+# Seasonal forecast using last values
+season <- decomp$time.series[,1]
+l2y <- window(season,start=c(1952, 1), end=c(1956,12))
+s.fore <- ts(l2y, start=c(1957,1), end=c(1960,12), freq=12)
+
+# Fitting the remainder
+rmndr <- decomp$time.series[, 3]
+tsdisplay(rmndr)
+fit.rmndr <- arima(rmndr, order=c(4,0,0), include.mean=F)
+r.fore <- predict(fit.rmndr, n.ahead=48)$pred
+
+# Adding the 3 components
+fore <- t.fore + s.fore + r.fore
+```
+
+```{r}
+plot(window(d.air, start = c(1955, 1), end = c(1960, 12)))
+lines(fore, col = "green")
+legend(x = 'bottomleft', 
+       legend = c('original', 'prediction'),
+       col = c('black', 'green'), 
+       lty = c(1, 1) , lwd = 2, bg = 'white')
 ```
 
 c)  Compare the different forecasts. Which of the methods seems to work best for the airplane data and why?
+
+```{r}
+d.air.fore <- window(d.air, start = c(1957, 1), end = c(1960, 12))
+
+# SARIMA
+mean((d.air.fore - air.pred$pred)^2)
+
+# STL
+mean((d.air.fore - fore)^2)
+```
+
+\textcolor{blue}{What we can see visually is also apparent when we compare the MSE of the two methods. The SARIMA model has a much smaller MSE value compared to the STL method. Therefore, in this case, we would prefer this model.}
