@@ -1,0 +1,84 @@
+---
+title: "Exercise 10"
+author: "Philipp Drebes"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  pdf_document: 
+    keep_tex: yes
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercise 10.1
+
+In this exercise we again have a look at the sunspot data (Series 4). We figured out that AR(10) is a suitable model to describe the log transformed data.
+
+```{r}
+library(fpp, quietly = T)
+lsunspot100 <- window(log(sunspotarea), start = 1875, end = 1974)
+fit.ar10 <- arima(lsunspot100, order = c(10, 0, 0))
+```
+
+a)  For the AR(10) model, predict the next 100 observations of the log-transformed time series and plot them together with the log-transformed time series. Also add a line for the estimated global mean to the plot. What do you observe?
+
+```{r}
+pred <- predict(fit.ar10, n.ahead = 100)
+plot(lsunspot100, xlim = c(1875, 2074))
+abline(h = fit.ar10$coef["intercept"], lty = 2)
+lines(pred$pred, col = "green")
+```
+
+\textcolor{blue}{We observe a regression to the mean for the predicted time series.}
+
+b)  Perform an out-of-sample evaluation, i.e. compare your prediction with the last 37 observed values of the time series. Plot the full log-transformed time series (1875 - 2011) and add your prediction (1975 - 2011) as well as prediction intervals to the plot and comment on the plot. Also compute the mean squared forecasting error of your prediction.
+
+```{r}
+plot(log(sunspotarea))
+lines(pred$pred, col = "green")
+lines(pred$pred + 1.96 * pred$se, col = 'gray', lty = 2)
+lines(pred$pred - 1.96 * pred$se, col = 'gray', lty = 2)
+legend(x = 'bottomleft', 
+       legend = c('original', 'prediction', 'CI'),
+       col = c('black', 'green', 'gray'), 
+       lty = c(1, 1, 2) , lwd = 2, bg = 'white')
+```
+
+\textcolor{blue}{Again, we see the regression to the mean for our predicted values and how those differ from the actual data. It could be argued that the first one or two oscillations around 1980 - 1990 can be used to predict values. However, after 1990 the model cannot be used to predict the actual values as the difference to the actual recorded data is to large. At around the year 2008, we see that the confidence intervals of our model do not contain the recorded values, whereas before 2008, all values lie inside the confidence interval. One could argue that this could be an outlier, but considering the overall poor performance of this model after 1990, I tend to argue in favor of a model error.}
+
+\
+Mean squared forecasting error (MSE)
+
+```{r}
+actual <- window(log(sunspotarea), start = 1974, end = 2011)
+mean((actual - pred$pred)^2)
+```
+
+\textcolor{blue}{This value alone does not contain a lot of information. However, we could use it to compare this model to another one.}
+
+## Exercise 10.2
+
+We want to compare methods for forecasting the airplane data: the forecasting using a SARIMA model and the forecasting using an STL-decomposition. For being able to compare the prediction methods with the real data, first read in the airplaine data and use only the observations from 1949 to 1956.
+
+```{r}
+d.air <- AirPassengers
+d.airshort <- window(d.air, end = c(1956, 12))
+```
+
+a)  Fit an ARIMA/SARIMA Model for the shorter dataset d.airshort. Use transformations if suitable. Compute a prediction for the years 1957-1960 and plot it along with the prediction interval and the actual observations for this period.
+
+```{r}
+# predict(..., n.ahead = ...)
+```
+
+b)  Now do prediction for the years 1957-1960 as seen in the lecture with linear extraploation of the trend estimate, continuation of the seasonal effect and and ARMA(p,q) forecast for the stationary remainder. Plot the predicted timeseries (this time without prediction interval, why?) and compare them to the actual observations.
+
+```{r}
+## example trend extraction
+fit <- stl(data, s.window = "periodic")
+trend <- fit$time.series[, 2]
+```
+
+c)  Compare the different forecasts. Which of the methods seems to work best for the airplane data and why?

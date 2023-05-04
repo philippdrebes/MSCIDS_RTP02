@@ -96,3 +96,29 @@ tsdisplay(sarima.sim(ar = c(-0.3, 0.3),
 \textcolor{blue}{The $\text{SARIMA}(2,1,2)(2,1,2)^{12}$ appears to be a good fit for the time series, as the residuals only contain white noise behavior. Additionally, the ACF and PACF of the simulated data resemble those of the original.}
 
 \textcolor{blue}{Some further models, such as $\text{SARIMA}(3,1,2)(3,1,2)^{12}$ and $\text{SARIMA}(4,1,2)(4,1,2)^{12}$ were tested, as the ACF and PACF of the transformed original data hint at further significant values at those lags. However, creating those models produced NaN values or other errors, which made them not usable.}
+
+```{r}
+fit.auto <- auto.arima(prodn, ic = 'aic')
+summary(fit.auto)
+```
+
+```{r}
+set.seed(2)
+par(mfrow = c(3, 3))
+
+# the model is used for the simulations
+
+
+replicate(9, plot(sarima.sim(ar = c(-0.3, 0.3),
+                             ma = c(0.6, -0.1),
+                             sar = c(0.4, -0.3),
+                             sma = c(-1.1, 0.5),
+                             S = 12, d = 1, n = 370) , ylab = 'sim'))
+
+
+tsdisplay(sarima.sim(ar = c(-0.3, 0.3),
+                     ma = c(0.6, 0),
+                     sar = c(0.4, -0.3),
+                     sma = c(-1.1, 0.5),
+                     S = 12, d = 1, n = 370) , ylab = 'sim')
+```
