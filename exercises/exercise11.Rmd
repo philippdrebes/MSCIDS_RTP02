@@ -1,0 +1,45 @@
+---
+title: "Exercise 11"
+author: "Philipp Drebes"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  pdf_document: 
+    keep_tex: yes
+    highlight: pygments
+---
+
+## Exercise 11.1
+
+Let $E_t$ be white noise with mean 0 and variance $\sigma^2$. Regard the following three processes:
+
+i)  $X_t = t + E_t$
+
+ii) $Y_t = X_t − X_{t−1}$
+
+iii) $Z_t = X_t − t$
+
+```{=html}
+<!-- -->
+```
+a)  Which of these three processes are stationary, and which are not? Why?
+
+$X_t = t + E_t$ is not constant, because there will be an upwards trend, as white noise will be added to the current time step.
+
+$Y_t = X_t - X_{t-1} = t + E_t - (t - 1 + E_{t - 1}) = 1 + E_t - E_{t-1}$ is stationary, as 1 is a constant and $E_t$ and $E_{-1}$ are both white noise.
+
+$Z_t = X_t - t$ is stationary because $Z_t = X_t - t = t + E_t - t = E_t$ and $E_t$ is white noise.
+
+b)  Optional: Compute the theoretical autocorrelation of the processes $Y_t$ and $Z_t$ and the cross-correlation between the two.
+
+c)  Simulate both $Y_t$ and $Z_t$. To this end, assume that $E_t$ follows a standard normal distribution $\mathcal{N}(0; 1)$. Simulate time series of length $n = 200$, and compare your empirical results to the theoretical ones of part b).
+
+```{r}
+t.E <- ts(rnorm(201)) 
+t.X <- (1:201) + t.E 
+t.Y <- diff(t.X)
+t.Z <- t.E
+
+acf(ts.intersect(t.Y, t.Z), ylim = c(-1, 1))
+
+ccf(t.Y, t.Z)
+```
