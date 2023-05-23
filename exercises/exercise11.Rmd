@@ -18,9 +18,8 @@ ii) $Y_t = X_t − X_{t−1}$
 
 iii) $Z_t = X_t − t$
 
-```{=html}
 <!-- -->
-```
+
 a)  Which of these three processes are stationary, and which are not? Why?
 
 $X_t = t + E_t$ is not constant, because there will be an upwards trend, as white noise will be added to the current time step.

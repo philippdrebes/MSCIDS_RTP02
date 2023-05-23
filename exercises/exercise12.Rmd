@@ -1,0 +1,68 @@
+---
+title: "Exercise 12"
+author: "Philipp Drebes"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  pdf_document: 
+    keep_tex: yes
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercise 12.1
+
+In this exercise you will work with the `Guns` dataset, which contains observations on criminal and demographic variables for all US states in the years 1977-1999. You will need to load the package `AER`.
+
+```{r}
+library(AER, quietly = T)
+data("Guns")
+```
+
+a)  Verify that Guns is a balanced panel: extract the number of years and states from the dataset and assign them to the predefined variables years and states, respectively. Afterwards use these variables for a logical comparison: check that the panel is balanced.
+
+```{r}
+head(Guns)
+summary(Guns)
+
+years <- length(levels(Guns$year))
+states <- length(levels(Guns$state))
+years * states == nrow(Guns)
+```
+
+\textcolor{blue}{The data set is indeed balanced.}
+
+b)  There is a controversial debate whether and if to what extent the right to carry a gun influences crime. Proponents of so-called "Carrying a Concealed Weapon" (CCW) laws argue that the deterrent effect of guns prevents crime, whereas opponents argue that the public availability of guns increases their usage and thus makes it easier to commit crimes. In the following exercises you will empirically investigate this topic. To begin with consider the following estimated model
+
+$$
+log(\hat{v}_i) = 6.135 - 0.443 \cdot l_i \quad \text{with} \ i = 1, ..., 51
+$$ where v (violent feature) is the violent crime rate (incidents per 100'000 residents) and l (law feature) is a binary variable indicating the implementation of a CCW law (1 = yes, 0 = no), respectively.
+
+i)  Extend and estimate the model by including state fixed effects using the function `plm()` and assign the model object to the predefined variable `model.se`. Can you think of an unobserved variable that is captured by this model specification?
+
+```{r}
+library(plm, quietly = T)
+model.se <- plm(log(violent) ~ law, data = Guns, index = c('state', 'year'), model = 'within')
+```
+
+ii) Print a summary of the model which reports cluster robust standard errors.
+
+```{r}
+coeftest(model.se, vcov. = vcovHC, type = 'HC1')
+```
+
+\textcolor{blue}{According to this model, having a law in effect increases the violent crime rate by 11.36%. However, we get NaN values for the standard error and p-value. Therefore, the interpretation of this value might not be very reliable.}
+
+iii) Test whether the fixed state effects are jointly significant from zero. To do so use the function `pFtest()`. Use `?pFtest` for additional information.
+
+```{r}
+model = plm(log(violent) ~ law, data = Guns, index = c('state', 'year'), model = 'pooling')
+
+# model.se -> fixed effects
+# model -> no fixed effects
+pFtest(model.se, model)
+```
+
+\textcolor{blue}{The p-value is below the significance level. Therefore, we reject the null hypothesis that there are no significant effects. The state fixed effects are significantly different from 0.}
